@@ -1,0 +1,41 @@
+Disease,Severity,Paper_Link
+Coronary Artery Disease,High,https://www.ncbi.nlm.nih.gov/books/NBK560492/
+Crohn's Disease,Medium,https://www.ncbi.nlm.nih.gov/books/NBK470270/
+Psoriasis,Low,https://www.ncbi.nlm.nih.gov/books/NBK448194/
+Rheumatoid Arthritis,Medium,https://www.ncbi.nlm.nih.gov/books/NBK441999/
+Migraine,Medium,https://www.ncbi.nlm.nih.gov/books/NBK560787/
+Osteoarthritis,Medium,https://www.ncbi.nlm.nih.gov/books/NBK482326/
+Gastroesophageal Reflux Disease (GERD),Low,https://www.ncbi.nlm.nih.gov/books/NBK441938/
+Multiple Sclerosis,High,https://www.ncbi.nlm.nih.gov/books/NBK499849/
+Heart Failure,High,https://www.ncbi.nlm.nih.gov/books/NBK430873/
+Malaria,High,https://www.ncbi.nlm.nih.gov/books/NBK551711/
+Pneumonia,High,https://www.ncbi.nlm.nih.gov/books/NBK526116/
+Hyperthyroidism,Medium,https://www.ncbi.nlm.nih.gov/books/NBK537053/
+Anxiety Disorder,Medium,https://www.ncbi.nlm.nih.gov/books/NBK470361/
+Hepatitis,High,https://www.ncbi.nlm.nih.gov/books/NBK554549/
+COVID-19,High,https://www.nature.com/articles/s41591-020-0962-9
+Tuberculosis,High,https://www.ncbi.nlm.nih.gov/books/NBK441916/
+Celiac Disease,Medium,https://www.ncbi.nlm.nih.gov/books/NBK441900/
+Bronchitis,Medium,https://www.ncbi.nlm.nih.gov/books/NBK482129/
+Gout,Medium,https://www.ncbi.nlm.nih.gov/books/NBK546606/
+Typhoid,Medium,https://www.ncbi.nlm.nih.gov/books/NBK557513/
+Anemia,Medium,https://www.ncbi.nlm.nih.gov/books/NBK499994/
+Acne Vulgaris,Low,https://www.ncbi.nlm.nih.gov/books/NBK459173/
+Common Cold,Low,https://www.ncbi.nlm.nih.gov/books/NBK279543/
+Obesity,Medium,https://www.ncbi.nlm.nih.gov/books/NBK542289/
+Type 2 Diabetes,Medium,https://www.ncbi.nlm.nih.gov/books/NBK513253/
+Urinary Tract Infection (UTI),Medium,https://www.ncbi.nlm.nih.gov/books/NBK470195/
+Peptic Ulcer,Medium,https://www.ncbi.nlm.nih.gov/books/NBK534792/
+Hypothyroidism,Medium,https://www.ncbi.nlm.nih.gov/books/NBK519536/
+Irritable Bowel Syndrome (IBS),Low,https://www.ncbi.nlm.nih.gov/books/NBK534810/
+Depression,High,https://www.ncbi.nlm.nih.gov/books/NBK430847/
+Parkinson's Disease,High,https://www.ncbi.nlm.nih.gov/books/NBK470193/
+Dengue Fever,High,https://www.ncbi.nlm.nih.gov/books/NBK430732/
+Alzheimer's Disease,High,https://www.ncbi.nlm.nih.gov/books/NBK499922/
+Hypertension (High Blood Pressure),Medium,https://www.ncbi.nlm.nih.gov/books/NBK482439/
+Eczema,Low,https://www.ncbi.nlm.nih.gov/books/NBK538209/
+Influenza (Flu),Medium,https://www.ncbi.nlm.nih.gov/books/NBK459363/
+Asthma,Medium,https://www.ncbi.nlm.nih.gov/books/NBK430901/
+Systemic Lupus Erythematosus (Lupus),High,https://www.ncbi.nlm.nih.gov/books/NBK535405/
+Chronic Kidney Disease,High,https://www.ncbi.nlm.nih.gov/books/NBK535404/
+Arrhythmia,Medium,https://www.ncbi.nlm.nih.gov/books/NBK537152/
