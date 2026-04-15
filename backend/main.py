@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Body
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -7,181 +7,198 @@ import numpy as np
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
 app = FastAPI()
 
+# ✅ CORS (IMPORTANT)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Since it's a dev project
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load model and data
+# ✅ Load ML assets safely
+model, mlb, disease_info = None, None, pd.DataFrame()
+
 try:
     model = joblib.load('model.pkl')
     mlb = joblib.load('mlb_symptoms.pkl')
     disease_info = pd.read_csv('disease_info.csv')
+    print("✅ Model & data loaded successfully")
 except Exception as e:
-    print(f"Error loading model/data: {e}")
-    model = None
-    mlb = None
-    disease_info = pd.DataFrame()
+    print(f"❌ Error loading model/data: {e}")
 
-# Configure Gemini
+# ✅ Gemini setup
 api_key = os.getenv("GEMINI_API_KEY")
+
 if api_key:
     genai.configure(api_key=api_key)
     chat_model = genai.GenerativeModel('gemini-flash-lite-latest')
 else:
     chat_model = None
 
+
+# ---------------------------
+# 📦 Request Models
+# ---------------------------
+
 class PredictionRequest(BaseModel):
     symptoms: list[str]
     past_history: str
     genetic_issue: str
 
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+# ---------------------------
+# 🔮 Prediction Endpoint
+# ---------------------------
+
 @app.post("/predict")
 def predict_disease(req: PredictionRequest):
-    if not req.symptoms or len(req.symptoms) == 0:
+
+    if not model or not mlb:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
+    if not req.symptoms:
         return {
             "predictions": [],
             "top_prediction": "Healthy / Insufficient Data",
             "top_severity": "Low",
-            "warning": "No symptoms provided. Please select symptoms for a medical assessment.",
+            "warning": "No symptoms provided.",
             "prediction": "Healthy / Insufficient Data",
             "severity": "Low",
             "paper_link": ""
         }
 
-    if not model or not mlb:
-        raise HTTPException(status_code=500, detail="Model not loaded")
-        
-    symps = [s.lower().replace(" ", "_") for s in req.symptoms]
-    
-    # Transform symptoms via MLB
-    symptoms_encoded = mlb.transform([symps])
-    symptoms_df = pd.DataFrame(symptoms_encoded, columns=mlb.classes_)
-    
-    cat_data = pd.DataFrame([{
-        'Past_History': req.past_history.lower().replace(" ", "_"),
-        'Genetic_Issue': req.genetic_issue.lower()
-    }])
-    
-    input_data = pd.concat([symptoms_df, cat_data], axis=1)
-    
-    # Get probability estimates for ALL classes
-    probabilities = model.predict_proba(input_data)[0]
-    classes = model.classes_
-    
-    # Sort by probability, take top 5
-    top_indices = np.argsort(probabilities)[::-1][:5]
-    
-    predictions = []
-    for idx in top_indices:
-        disease_name = classes[idx]
-        probability = float(probabilities[idx])
-        
-        # Look up disease info
-        info_row = disease_info[disease_info['Disease'] == disease_name]
-        
-        if len(info_row) > 0:
-            info = info_row.iloc[0]
-            severity = info['Severity']
-            paper_link = info['Paper_Link']
-        else:
-            severity = "Unknown"
-            paper_link = "No link available"
-        
-        predictions.append({
-            "disease": disease_name,
-            "probability": round(probability * 100, 1),
-            "severity": severity,
-            "paper_link": paper_link,
-        })
-    
-    # Determine the top prediction's warning
-    top = predictions[0] if predictions else None
-    warning = ""
-    if top:
-        if top["severity"].lower() == "high":
-            warning = "High severity condition detected. Please consult a doctor immediately."
-        else:
-            warning = "Moderate/Low severity condition."
-    
-    return {
-        "predictions": predictions,
-        "top_prediction": top["disease"] if top else "Unknown",
-        "top_severity": top["severity"] if top else "Unknown",
-        "warning": warning,
-        # Keep backward compat
-        "prediction": top["disease"] if top else "Unknown",
-        "severity": top["severity"] if top else "Unknown",
-        "paper_link": top["paper_link"] if top else "",
-    }
+    try:
+        # Normalize symptoms
+        symps = [s.lower().replace(" ", "_") for s in req.symptoms]
 
-import json
+        # Encode symptoms
+        symptoms_encoded = mlb.transform([symps])
+        symptoms_df = pd.DataFrame(symptoms_encoded, columns=mlb.classes_)
+
+        # Categorical
+        cat_data = pd.DataFrame([{
+            'Past_History': req.past_history.lower().replace(" ", "_"),
+            'Genetic_Issue': req.genetic_issue.lower()
+        }])
+
+        input_data = pd.concat([symptoms_df, cat_data], axis=1)
+
+        # Predictions
+        probabilities = model.predict_proba(input_data)[0]
+        classes = model.classes_
+
+        top_indices = np.argsort(probabilities)[::-1][:5]
+
+        predictions = []
+
+        for idx in top_indices:
+            disease_name = classes[idx]
+            probability = float(probabilities[idx])
+
+            info_row = disease_info[disease_info['Disease'] == disease_name]
+
+            if len(info_row) > 0:
+                info = info_row.iloc[0]
+                severity = info['Severity']
+                paper_link = info['Paper_Link']
+            else:
+                severity = "Unknown"
+                paper_link = "No link available"
+
+            predictions.append({
+                "disease": disease_name,
+                "probability": round(probability * 100, 1),
+                "severity": severity,
+                "paper_link": paper_link,
+            })
+
+        top = predictions[0] if predictions else None
+
+        return {
+            "predictions": predictions,
+            "top_prediction": top["disease"] if top else "Unknown",
+            "top_severity": top["severity"] if top else "Unknown",
+            "warning": "Consult a doctor if symptoms persist.",
+            "prediction": top["disease"] if top else "Unknown",
+            "severity": top["severity"] if top else "Unknown",
+            "paper_link": top["paper_link"] if top else "",
+        }
+
+    except Exception as e:
+        print("❌ Prediction error:", e)
+        raise HTTPException(status_code=500, detail="Prediction failed")
+
+
+# ---------------------------
+# 📊 Metrics Endpoint
+# ---------------------------
 
 @app.get("/metrics")
 def get_metrics():
-    """
-    Returns per-model metrics from the Soft Voting Ensemble training run.
-    
-    Shape (new format):
-    {
-      "ensemble":            { "accuracy": ..., "precision": ..., "recall": ..., "f1_score": ... },
-      "random_forest":       { ... },
-      "gradient_boosting":   { ... },
-      "svm":                 { ... },
-      "knn":                 { ... },
-      "logistic_regression": { ... },
-      "test_samples": 960
-    }
-    
-    Falls back to flat format for backwards compatibility if old model.pkl is loaded.
-    """
     try:
         with open('metrics.json', 'r') as f:
             data = json.load(f)
-        
-        # If new multi-model format, return as-is
+
+        # If already correct format
         if "ensemble" in data:
             return data
-        
-        # Legacy flat format — wrap it so frontend still works
+
+        # Fallback format
         return {
             "ensemble": {
-                "accuracy":  data.get("accuracy", 0),
+                "accuracy": data.get("accuracy", 0),
                 "precision": data.get("precision", 0),
-                "recall":    data.get("recall", 0),
-                "f1_score":  data.get("f1_score", 0),
-                "roc_auc":   data.get("roc_auc", 0),
+                "recall": data.get("recall", 0),
+                "f1_score": data.get("f1_score", 0),
             },
             "test_samples": data.get("test_samples", 0)
         }
+
     except Exception:
         return {
-            "ensemble": {"accuracy": 0, "precision": 0, "recall": 0, "f1_score": 0, "roc_auc": 0},
+            "ensemble": {"accuracy": 0, "precision": 0, "recall": 0, "f1_score": 0},
             "test_samples": 0
         }
 
-class ChatRequest(BaseModel):
-    message: str
-    
+
+# ---------------------------
+# 🤖 Chat Endpoint
+# ---------------------------
+
 @app.post("/chat")
 def chat_with_gemini(req: ChatRequest):
+
     if not chat_model:
-        return {"response": "Gemini API key is not configured in the backend (.env file missing GEMINI_API_KEY)."}
-    
+        return {
+            "response": "⚠️ AI service not configured. (Missing GEMINI_API_KEY)"
+        }
+
     try:
-        response = chat_model.generate_content(
-            "You are a helpful medical assistant for a BMI and Health prediction app. "
-            "Always state you are an AI, not a doctor. "
-            f"User says: {req.message}"
+        prompt = (
+            "You are a helpful health assistant for a BMI app. "
+            "Always mention you are an AI, not a doctor. "
+            f"User: {req.message}"
         )
-        return {"response": response.text}
+
+        response = chat_model.generate_content(prompt)
+
+        return {
+            "response": response.text or "No response generated."
+        }
+
     except Exception as e:
-        return {"response": f"Error interacting with AI: {str(e)}"}
+        print("❌ Chat error:", e)
+        return {
+            "response": "⚠️ Error communicating with AI service."
+        }
