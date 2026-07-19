@@ -15,9 +15,13 @@ A browser-based BMI and health prediction tool built for India.
 
 Currently hosted temporarily on **Amazon Web Services (AWS EC2)**. (Closed)
 
-#Stack
+# Stack
 
-Vanilla HTML/CSS/JS · Gemini API for chatbot · AWS EC2 · Browser Geolocation · Google Fonts
+Vanilla HTML/CSS/JS  
+Gemini API for chatbot 
+AWS EC2 
+Browser Geolocation 
+Google Fonts
 
 # Disclaimer
 
